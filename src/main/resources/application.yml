@@ -1,0 +1,23 @@
+spring:
+  themeleaf:
+    cache: false # 关闭缓存
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/seckill?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
+    username: root
+    password: .lht@19961025.
+    type: com.alibaba.druid.pool.DruidDataSource
+  redis:
+    host: 121.196.148.198
+    port: 6379
+    database: 0
+    connect-timeout: 10000ms
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/*Mapper.xml
+  type-aliases-package: cn.cugcs.sakura.seckill.entity
+  configuration:
+    map-underscore-to-camel-case: true # 自动驼峰转换
+
+logging:
+  level:
+    cn.cugcs.sakura.seckill.mapper: debug
