@@ -1,7 +1,6 @@
 package cn.cugcs.sakura.seckill.service;
 
-import cn.cugcs.sakura.seckill.entity.OrderInfo;
-import cn.cugcs.sakura.seckill.entity.User;
+import cn.cugcs.sakura.seckill.entity.*;
 import cn.cugcs.sakura.seckill.vo.GoodsVO;
 import com.baomidou.mybatisplus.extension.service.IService;
 
@@ -16,4 +15,13 @@ import com.baomidou.mybatisplus.extension.service.IService;
 public interface IOrderInfoService extends IService<OrderInfo> {
 
     OrderInfo seckill(User user, GoodsVO goodsVO);
+
+    SeckillGoods reduceSeckillGoodsStock(User user, GoodsVO goodsVO);
+
+    Goods reduceGoodsStock(User user, GoodsVO goodsVO);
+
+    OrderInfo generateOrder(User user, Goods goods, SeckillGoods seckillGoods);
+
+    SeckillOrder generateSeckillOrder(User user, OrderInfo orderInfo, Goods goods);
+
 }

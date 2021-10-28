@@ -9,8 +9,10 @@ import cn.cugcs.sakura.seckill.service.ISeckillOrderService;
 import cn.cugcs.sakura.seckill.vo.GoodsVO;
 import cn.cugcs.sakura.seckill.vo.RespBeanEnum;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
@@ -30,23 +32,27 @@ public class SeckillController {
     private ISeckillOrderService seckillOrderService;
     @Autowired
     private IOrderInfoService orderInfoService;
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
 
     @RequestMapping(value = "/seckill", method = RequestMethod.POST)
-    public String seckill(Model model, User user, Long goodsId){
-        model.addAttribute("user", user);
+    public String seckill(Model model, Long goodsId, @CookieValue(value = "userTicket")String userTicket){
+        User user = (User) redisTemplate.opsForValue().get("user:" + userTicket);
+        if (user == null) return "login";
         GoodsVO goodsVO = goodsService.getSeckillGoodsByGoodsId(goodsId);
         if (goodsVO.getGoodsStock() < 1){
-            model.addAttribute("errmsg", RespBeanEnum.EMPTY_STOCK.getMessage());
+            model.addAttribute("errMessage", RespBeanEnum.EMPTY_STOCK.getMessage());
             return "seckill_fail";
         }
         SeckillOrder seckillOrder = seckillOrderService.getByUserIdAndGoodsId(user.getId(), goodsId);
         if (seckillOrder != null){
-            model.addAttribute("errmsg", RespBeanEnum.REPEAT_ERROR.getMessage());
+            model.addAttribute("errMessage", RespBeanEnum.REPEAT_ERROR.getMessage());
             return "seckill_fail";
         }
         OrderInfo order = orderInfoService.seckill(user, goodsVO);
-        model.addAttribute("orderinfo", order);
+        model.addAttribute("orderInfo", order);
         model.addAttribute("goods", goodsVO);
+        model.addAttribute("user", user);
         return "order_detail";
     }
 }

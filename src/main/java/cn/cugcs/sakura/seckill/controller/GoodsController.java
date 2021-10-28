@@ -28,8 +28,6 @@ import java.util.Date;
 @Slf4j
 public class GoodsController {
     @Autowired
-    private IUserService userService;
-    @Autowired
     private IGoodsService goodsService;
     /**
      * @Author sakura
@@ -39,8 +37,7 @@ public class GoodsController {
      * @return java.lang.String
      **/
     @RequestMapping(value = "/goodsList", method = RequestMethod.GET)
-    public String goodsList(Model model, User user){
-        model.addAttribute("user", user);
+    public String goodsList(Model model){
         model.addAttribute("goodsList", goodsService.listSeckillGoods());
         return "goods_list";
     }
