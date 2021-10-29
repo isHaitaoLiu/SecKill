@@ -96,13 +96,13 @@ $(function () {
 function getDetail() {
     var goodsId = g_getQueryString("goodsId");// goodsId为goods_list.html中详情url中的参数
     $.ajax({
-        url: "/goods/getDetails/" + goodsId,
+        url: "/goods/detail/" + goodsId,
         type: "GET",
         success: function (data) {
-            if (data.code == 0) {
+            if (data.code === 200) {
                 render(data.data);
             } else {
-                layer.msg(data.msg);
+                layer.msg(data.message);
             }
         },
         error: function () {
@@ -112,11 +112,11 @@ function getDetail() {
 }
 
 /*渲染页面*/
-function render(detail) {
-    var seckillStatus = detail.seckillStatus;
-    var remainSeconds = detail.remainSeconds;
-    var goods = detail.goods;
-    var user = detail.user;
+function render(goodsDetail) {
+    var seckillStatus = goodsDetail.seckillStatus;
+    var remainSeconds = goodsDetail.remainSeconds;
+    var goods = goodsDetail.goodsVO;
+    var user = goodsDetail.user;
     console.log(detail);
     // console.log(goods);
     // console.log(user);
@@ -148,7 +148,7 @@ function countDown() {
             $("#remainSeconds").val(remainSeconds - 1);
             countDown();
         }, 1000);
-    } else if (remainSeconds == 0) { // 秒杀进行中
+    } else if (remainSeconds === 0) { // 秒杀进行中
         $("#buyButton").attr("disabled", false);
         if (timeout) {
             clearTimeout(timeout);

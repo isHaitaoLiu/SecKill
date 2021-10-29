@@ -1,6 +1,7 @@
 package cn.cugcs.sakura.seckill.service.impl;
 
 import cn.cugcs.sakura.seckill.entity.*;
+import cn.cugcs.sakura.seckill.exception.GlobalException;
 import cn.cugcs.sakura.seckill.mapper.OrderInfoMapper;
 import cn.cugcs.sakura.seckill.mapper.SeckillOrderMapper;
 import cn.cugcs.sakura.seckill.service.IGoodsService;
@@ -8,6 +9,8 @@ import cn.cugcs.sakura.seckill.service.IOrderInfoService;
 import cn.cugcs.sakura.seckill.service.ISeckillGoodsService;
 import cn.cugcs.sakura.seckill.service.ISeckillOrderService;
 import cn.cugcs.sakura.seckill.vo.GoodsVO;
+import cn.cugcs.sakura.seckill.vo.OrderDetailVO;
+import cn.cugcs.sakura.seckill.vo.RespBeanEnum;
 import com.baomidou.mybatisplus.extension.conditions.query.QueryChainWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -91,5 +94,25 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
         seckillOrder.setGoodsId(goods.getId());
         seckillOrderMapper.insert(seckillOrder);
         return seckillOrder;
+    }
+
+    /**
+     * @Author sakura
+     * @Description 订单详情获取方法
+     * @Date 2021/10/29
+     * @Param [orderId]
+     * @return cn.cugcs.sakura.seckill.vo.OrderDetailVO
+     **/
+    @Override
+    public OrderDetailVO getOrderDetail(Long orderId) {
+        if (orderId == null){
+            throw new GlobalException(RespBeanEnum.ORDER_NOT_EXIST);
+        }
+        OrderInfo orderInfo = orderInfoMapper.selectById(orderId);
+        GoodsVO goodsVO = goodsService.getSeckillGoodsByGoodsId(orderInfo.getGoodsId());
+        OrderDetailVO orderDetailVO = new OrderDetailVO();
+        orderDetailVO.setOrderInfo(orderInfo);
+        orderDetailVO.setGoodsVO(goodsVO);
+        return orderDetailVO;
     }
 }

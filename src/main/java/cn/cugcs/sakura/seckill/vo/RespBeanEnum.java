@@ -19,7 +19,9 @@ public enum RespBeanEnum {
     BIND_ERROR(5013, "参数校验异常"),
     //秒杀模块
     EMPTY_STOCK(5021, "空库存"),
-    REPEAT_ERROR(5052, "该商品每人限购一件");
+    REPEAT_ERROR(5022, "该商品每人限购一件"),
+    //订单模块
+    ORDER_NOT_EXIST(5031, "订单信息不存在");
     private final Integer code;
     private final String message;
 }

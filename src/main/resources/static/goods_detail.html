@@ -1,25 +1,24 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="en">
 <head>
     <title>商品详情</title>
 
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
 
     <!-- jquery -->
-    <script type="text/javascript" th:src="@{/js/jquery.min.js}"></script>
+    <script type="text/javascript" src="/js/jquery.min.js"></script>
     <!-- bootstrap -->
-    <link rel="stylesheet" type="text/css" th:href="@{/bootstrap/css/bootstrap.min.css}"/>
-    <script type="text/javascript" th:src="@{/bootstrap/js/bootstrap.min.js}"></script>
+    <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css"/>
+    <script type="text/javascript" src="/bootstrap/js/bootstrap.min.js"></script>
     <!-- jquery-validator -->
-    <script type="text/javascript" th:src="@{/jquery-validation/jquery.validate.min.js}"></script>
-    <script type="text/javascript" th:src="@{/jquery-validation/localization/messages_zh.min.js}"></script>
+    <script type="text/javascript" src="/jquery-validation/jquery.validate.min.js"></script>
+    <script type="text/javascript" src="/jquery-validation/localization/messages_zh.min.js"></script>
     <!-- layer -->
-    <script type="text/javascript" th:src="@{/layer/layer.js}"></script>
+    <script type="text/javascript" src="/layer/layer.js"></script>
     <!-- md5.js -->
-    <script type="text/javascript" th:src="@{/js/md5.min.js}"></script>
+    <script type="text/javascript" src="/js/md5.min.js"></script>
     <!-- common.js -->
-    <script type="text/javascript" th:src="@{/js/common_encode.js}"></script>
-
+    <script type="text/javascript" src="/js/common_encode.js"></script>
 </head>
 <body>
 
@@ -28,50 +27,44 @@
     <div class="panel-heading">秒杀商品详情</div>
     <div class="panel-body">
         <!--如果user为空，则表明没有登录-->
-        <span th:if="${user eq null}"> 您还没有登录，请登陆后再操作<br/></span>
+        <span id="userTip"> 您还没有登录，请登陆后再操作<br/></span>
         <span>没有收货地址的提示……</span>
     </div>
     <table class="table" id="goodslist">
         <tr>
             <td>商品名称</td>
-            <td colspan="3" th:text="${goods.goodsName}"></td>
+            <td colspan="3" id="goodsName"></td>
         </tr>
         <tr>
             <td>商品图片</td>
-            <td colspan="3"><img th:src="@{${goods.goodsImg}}" width="200" height="200"/></td>
+            <td colspan="3"><img id="goodsImg" width="200" height="200"/></td>
         </tr>
         <tr>
             <td>秒杀开始时间</td>
             <!--格式转换-->
-            <td th:text="${#dates.format(goods.startDate, 'yyyy-MM-dd HH:mm:ss')}"></td>
+            <td id="startTime"></td>
             <!--秒杀状态-->
-            <td id="miaoshaTip">
-                <input type="hidden" id="remainSeconds" th:value="${remainSeconds}"/>
-                <!--倒计时-->
-                <span th:if="${seckillStatus == 0}">秒杀倒计时：
-                    <span id="countDown" th:text="${remainSeconds}"></span>秒
-                </span>
-                <span th:if="${seckillStatus == 1}">秒杀进行中</span>
-                <span th:if="${seckillStatus == 2}">秒杀已结束</span>
+            <td>
+                <input type="hidden" id="remainSeconds"/>
+                <span id="seckillTip"></span>
             </td>
             <td>
-                <form id="seckill" method="post" action="/seckill/seckill">
-                    <button class="btn btn-primary btn-block" type="submit" id="buyButton">立即秒杀</button>
-                    <input type="hidden" name="goodsId" th:value="${goods.id}"/>
-                </form>
+                <button class="btn btn-primary btn-block" type="button" id="buyButton" onclick="doSeckill()">
+                    立即秒杀<input type="hidden" name="goodsId" id="goodsId">
+                </button>
             </td>
         </tr>
         <tr>
             <td>商品原价</td>
-            <td colspan="3" th:text="${goods.goodsPrice}"></td>
+            <td colspan="3" id="goodsPrice"></td>
         </tr>
         <tr>
             <td>秒杀价</td>
-            <td colspan="3" th:text="${goods.seckillPrice}"></td>
+            <td colspan="3" id="seckillPrice"></td>
         </tr>
         <tr>
             <td>库存数量</td>
-            <td colspan="3" th:text="${goods.stockCount}"></td>
+            <td colspan="3" id="stockCount"></td>
         </tr>
     </table>
 </div>
@@ -79,17 +72,83 @@
 </body>
 
 <script>
+    // 使用ajax从服务端请求页面数据, 跳转到这个页面时就会执行(function有$)
     $(function () {
-        countDown();
+        // countDown();
+        getDetail();
     });
+
+    function doSeckill() {
+        $.ajax({
+            url: "/seckill/seckill",
+            type: "POST",
+            data: {
+                goodsId: $("#goodsId").val()
+            },
+            success: function (data) {
+                if (data.code === 200) {
+                    window.location.href="/order_detail.html?orderId=" + data.data.id;
+                    //getSkResult($("#goodsId").val());
+                } else {
+                    layer.msg(data.message);
+                }
+            },
+            error: function () {
+                layer.msg("客户端请求有误");
+            }
+        });
+    }
+
+
+    /*获取商品详情*/
+    function getDetail() {
+        var goodsId = g_getQueryString("goodsId");// goodsId为goods_list.html中详情url中的参数
+        $.ajax({
+            url: "/goods/detail/" + goodsId,
+            type: "GET",
+            success: function (data) {
+                if (data.code === 200) {
+                    render(data.data);
+                } else {
+                    layer.msg(data.message);
+                }
+            },
+            error: function () {
+                layer.msg("客户端请求有误");
+            }
+        });
+    }
+
+
+    /*渲染页面*/
+    function render(goodsDetail) {
+        var remainSeconds = goodsDetail.remainSeconds;
+        var goods = goodsDetail.goodsVO;
+        var user = goodsDetail.user;
+        console.log(goodsDetail);
+        if (user != null) {
+            $("#userTip").text(user.nickname+" 你好！");
+        }
+
+        $("#goodsName").text(goods.goodsName);
+        $("#goodsImg").attr("src", goods.goodsImg);
+        $("#startTime").text(new Date(goods.startDate).format("yyyy-MM-dd hh:mm:ss"));
+        $("#remainSeconds").val(remainSeconds);
+        $("#goodsId").val(goods.id);
+        $("#goodsPrice").text(goods.goodsPrice);
+        $("#seckillPrice").text(goods.seckillPrice);
+        $("#stockCount").text(goods.stockCount);
+        countDown();
+    }
+
 
     function countDown() {
         var remainSeconds = $("#remainSeconds").val();
         var timeout;
         if (remainSeconds > 0) {   //秒杀还没开始，倒计时
             $("#buyButton").attr("disabled", true);// 秒杀按钮不可用
+            $("#seckillTip").html("秒杀倒计时：" + remainSeconds + "秒");
             timeout = setTimeout(function () {
-                $("#countDown").text(remainSeconds - 1);// 设置剩余时间文本
                 $("#remainSeconds").val(remainSeconds - 1);// 更新剩余时间变量
                 countDown();
             }, 1000);// 每秒更新一次
@@ -98,10 +157,10 @@
             if (timeout) {// 清除倒计时
                 clearTimeout(timeout);
             }
-            $("#miaoshaTip").html("秒杀进行中");// 更新文本
+            $("#seckillTip").html("秒杀进行中");// 更新文本
         } else {//秒杀已经结束(remainSeconds = -1)
             $("#buyButton").attr("disabled", true);
-            $("#miaoshaTip").html("秒杀已经结束");
+            $("#seckillTip").html("秒杀已经结束");
         }
     }
 

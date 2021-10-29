@@ -1,6 +1,17 @@
 spring:
-  themeleaf:
-    cache: false # 关闭缓存
+  web:
+    resources:
+      static-locations: classpath:/static/ # 静态资源路径
+      add-mappings: true   # 静态资源处理，默认开启
+      cache:
+        cachecontrol:
+          max-age: 3600  # 页面缓存时间
+      chain:
+        enabled: true    # 资源链启用，默认启用
+        cache: true       # 资源链缓存启用，默认禁用
+        compressed: true  # 资源链压缩启用，默认禁用
+  thymeleaf:
+    cache: true
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/seckill?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
@@ -12,6 +23,7 @@ spring:
     port: 6379
     database: 0
     connect-timeout: 10000ms
+
 mybatis-plus:
   mapper-locations: classpath*:/mapper/*Mapper.xml
   type-aliases-package: cn.cugcs.sakura.seckill.entity

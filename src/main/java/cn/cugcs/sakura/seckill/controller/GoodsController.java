@@ -3,17 +3,24 @@ package cn.cugcs.sakura.seckill.controller;
 
 import cn.cugcs.sakura.seckill.entity.User;
 import cn.cugcs.sakura.seckill.service.IGoodsService;
-import cn.cugcs.sakura.seckill.service.IUserService;
+import cn.cugcs.sakura.seckill.vo.GoodsDetailVO;
 import cn.cugcs.sakura.seckill.vo.GoodsVO;
-import lombok.extern.slf4j.Slf4j;
+import cn.cugcs.sakura.seckill.vo.RespBean;
+import cn.cugcs.sakura.seckill.vo.RespBeanEnum;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.*;
+import org.thymeleaf.context.WebContext;
+import org.thymeleaf.spring5.view.ThymeleafViewResolver;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 /**
  * <p>
@@ -25,10 +32,15 @@ import java.util.Date;
  */
 @Controller
 @RequestMapping("/goods")
-@Slf4j
 public class GoodsController {
     @Autowired
     private IGoodsService goodsService;
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
+    @Autowired
+    private ThymeleafViewResolver thymeleafViewResolver;
+
+
     /**
      * @Author sakura
      * @Description 跳转商品详情页面，填入用户数据
@@ -36,30 +48,39 @@ public class GoodsController {
      * @Param [model, user]
      * @return java.lang.String
      **/
-    @RequestMapping(value = "/goodsList", method = RequestMethod.GET)
-    public String goodsList(Model model){
+    @RequestMapping(value = "/goodsList", method = RequestMethod.GET, produces = "text/html;charset=utf-8")
+    @ResponseBody
+    public String goodsList(Model model, HttpServletRequest request, HttpServletResponse response){
+        //Redis获取缓存的页面，如果不为空，则直接返回缓存的页面
+        ValueOperations<String, Object> valueOperations = redisTemplate.opsForValue();
+        String html = (String) valueOperations.get("goods_list");
+        if (StringUtils.isNotEmpty(html)){
+            return html;
+        }
+        //数据库获取商品列表
         model.addAttribute("goodsList", goodsService.listSeckillGoods());
-        return "goods_list";
+        //thymeleaf渲染页面
+        WebContext context = new WebContext(request, response, request.getServletContext(), request.getLocale(), model.asMap());
+        html = thymeleafViewResolver.getTemplateEngine().process("goods_list", context);
+        //如果页面渲染成功，将页面数据存入缓存
+        if (StringUtils.isNotEmpty(html)){
+            valueOperations.set("goods_list", html, 60, TimeUnit.SECONDS);
+        }
+        return html;
     }
-    /*
-    @RequestMapping(value = "/goodsList", method = RequestMethod.GET)
-    public String toList(@CookieValue("userTicket") String userTicket, Model model){
-        User user = userService.getUserByCookie(userTicket);
-        model.addAttribute("user", user);
-        return "goods_list";
-    }
-     */
+
 
     /**
      * @Author sakura
-     * @Description 跳转商品详情页
-     * @Date 2021/10/26
-     * @Param [model, user, goodsId]
-     * @return java.lang.String
+     * @Description 商品详情页面
+     * @Date 2021/10/28
+     * @Param [model, user, goodsId, request, response]
+     * @return cn.cugcs.sakura.seckill.vo.RespBean<cn.cugcs.sakura.seckill.vo.GoodsDetailVO>
      **/
-    @RequestMapping(value = "/goods_detail/{goodsId}", method = RequestMethod.GET)
-    public String goodDetail(Model model, User user, @PathVariable Long goodsId){
-        model.addAttribute("user", user);
+    @RequestMapping(value = "/detail/{goodsId}", method = RequestMethod.GET)
+    @ResponseBody
+    public RespBean<GoodsDetailVO> goodsDetail(@CookieValue(value = "userTicket") String userTicket, @PathVariable Long goodsId){
+        User user = (User) redisTemplate.opsForValue().get("user:" + userTicket);
         GoodsVO goodsVO = goodsService.getSeckillGoodsByGoodsId(goodsId);
         //开始时间、结束时间、当前时间
         Date startDate = goodsVO.getStartDate();
@@ -76,11 +97,11 @@ public class GoodsController {
             remainSeconds = -1;
             seckillStatus = 2;
         }
-        log.info("seckillStatus: {}", seckillStatus);
-        log.info("remainSeconds: {}", remainSeconds);
-        model.addAttribute("remainSeconds", remainSeconds);
-        model.addAttribute("seckillStatus", seckillStatus);
-        model.addAttribute("goods", goodsVO);
-        return "goods_detail";
+        GoodsDetailVO goodsDetailVO = new GoodsDetailVO();
+        goodsDetailVO.setUser(user);
+        goodsDetailVO.setGoodsVO(goodsVO);
+        goodsDetailVO.setRemainSeconds(remainSeconds);
+        goodsDetailVO.setSeckillStatus(seckillStatus);
+        return new RespBean<>(RespBeanEnum.SUCCESS, goodsDetailVO);
     }
 }

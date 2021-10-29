@@ -2,6 +2,7 @@ package cn.cugcs.sakura.seckill.service;
 
 import cn.cugcs.sakura.seckill.entity.*;
 import cn.cugcs.sakura.seckill.vo.GoodsVO;
+import cn.cugcs.sakura.seckill.vo.OrderDetailVO;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 /**
@@ -24,4 +25,5 @@ public interface IOrderInfoService extends IService<OrderInfo> {
 
     SeckillOrder generateSeckillOrder(User user, OrderInfo orderInfo, Goods goods);
 
+    OrderDetailVO getOrderDetail(Long orderId);
 }
