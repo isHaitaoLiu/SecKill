@@ -18,4 +18,6 @@ public interface IGoodsService extends IService<Goods> {
     List<GoodsVO> listSeckillGoods();
 
     GoodsVO getSeckillGoodsByGoodsId(Long goodsId);
+
+    Integer updateStockCountByGoodsId(Goods goods, Long id);
 }

@@ -14,7 +14,9 @@ import cn.cugcs.sakura.seckill.vo.RespBeanEnum;
 import com.baomidou.mybatisplus.extension.conditions.query.QueryChainWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 
@@ -36,6 +38,8 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
     private SeckillOrderMapper seckillOrderMapper;
     @Autowired
     private IGoodsService goodsService;
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
 
     /**
      * @Author sakura
@@ -44,12 +48,15 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
      * @Param [user, goodsVO]
      * @return cn.cugcs.sakura.seckill.entity.OrderInfo
      **/
+    @Transactional
     @Override
     public OrderInfo seckill(User user, GoodsVO goodsVO) {
         SeckillGoods seckillGoods = reduceSeckillGoodsStock(user, goodsVO);
         Goods goods = reduceGoodsStock(user, goodsVO);
         OrderInfo orderInfo = generateOrder(user, goods, seckillGoods);
         SeckillOrder seckillOrder = generateSeckillOrder(user, orderInfo, goods);
+        //将秒杀订单添加到redis
+        redisTemplate.opsForValue().set("order:" + user.getId() + ":" + goods.getId(), seckillOrder);
         return orderInfo;
     }
 
@@ -57,16 +64,24 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
     @Override
     public SeckillGoods reduceSeckillGoodsStock(User user, GoodsVO goodsVO) {
         SeckillGoods seckillGoods = seckillGoodsService.getByGoodsId(goodsVO.getId());
-        seckillGoods.setStockCount(seckillGoods.getStockCount() - 1);
-        seckillGoodsService.updateById(seckillGoods);
+        //seckillGoods.setStockCount(seckillGoods.getStockCount() - 1);
+        //seckillGoodsService.updateById(seckillGoods);
+        Integer res = seckillGoodsService.updateStockCountByGoodsId(seckillGoods, goodsVO.getId());
+        if (res != 1){
+            throw new GlobalException(RespBeanEnum.EMPTY_STOCK);
+        }
         return seckillGoods;
     }
 
     @Override
     public Goods reduceGoodsStock(User user, GoodsVO goodsVO) {
         Goods goods = goodsService.getById(goodsVO.getId());
-        goods.setGoodsStock(goods.getGoodsStock() - 1);
-        goodsService.updateById(goods);
+        //goods.setGoodsStock(goods.getGoodsStock() - 1);
+        //goodsService.updateById(goods);
+        Integer res = goodsService.updateStockCountByGoodsId(goods, goodsVO.getId());
+        if (res != 1){
+            throw new GlobalException(RespBeanEnum.EMPTY_STOCK);
+        }
         return goods;
     }
 

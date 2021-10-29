@@ -39,16 +39,21 @@ public class SeckillController {
 
     @RequestMapping(value = "/seckill", method = RequestMethod.POST)
     @ResponseBody
-    public RespBean<Object> seckill(Model model, Long goodsId, @CookieValue(value = "userTicket")String userTicket){
+    public RespBean<Object> seckill(Long goodsId, @CookieValue(value = "userTicket")String userTicket){
         User user = (User) redisTemplate.opsForValue().get("user:" + userTicket);
+        if (user == null){
+            return new RespBean<>(RespBeanEnum.LOGIN_LOST);
+        }
         GoodsVO goodsVO = goodsService.getSeckillGoodsByGoodsId(goodsId);
         if (goodsVO.getGoodsStock() < 1){
-            model.addAttribute("errMessage", RespBeanEnum.EMPTY_STOCK.getMessage());
+            //model.addAttribute("errMessage", RespBeanEnum.EMPTY_STOCK.getMessage());
             return new RespBean<>(RespBeanEnum.EMPTY_STOCK);
         }
-        SeckillOrder seckillOrder = seckillOrderService.getByUserIdAndGoodsId(user.getId(), goodsId);
+        //redis查询秒杀订单
+        SeckillOrder seckillOrder = (SeckillOrder) redisTemplate.opsForValue().get("order:" + user.getId() + ":" + goodsId);
+        //SeckillOrder seckillOrder = seckillOrderService.getByUserIdAndGoodsId(user.getId(), goodsId);
         if (seckillOrder != null){
-            model.addAttribute("errMessage", RespBeanEnum.REPEAT_ERROR.getMessage());
+            //model.addAttribute("errMessage", RespBeanEnum.REPEAT_ERROR.getMessage());
             return new RespBean<>(RespBeanEnum.REPEAT_ERROR);
         }
         OrderInfo order = orderInfoService.seckill(user, goodsVO);

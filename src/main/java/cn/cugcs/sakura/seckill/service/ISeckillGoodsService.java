@@ -13,4 +13,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
  */
 public interface ISeckillGoodsService extends IService<SeckillGoods> {
     SeckillGoods getByGoodsId(Long goodsId);
+
+
+    Integer updateStockCountByGoodsId(SeckillGoods seckillGoods, Long id);
 }

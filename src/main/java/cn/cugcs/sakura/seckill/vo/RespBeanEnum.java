@@ -17,6 +17,7 @@ public enum RespBeanEnum {
     LOGIN_ERROR(5011, "用户名或密码错误"),
     PHONE_NUMBER_ERROR(5012, "手机号码格式不正确"),
     BIND_ERROR(5013, "参数校验异常"),
+    LOGIN_LOST(5014, "登录信息失效"),
     //秒杀模块
     EMPTY_STOCK(5021, "空库存"),
     REPEAT_ERROR(5022, "该商品每人限购一件"),

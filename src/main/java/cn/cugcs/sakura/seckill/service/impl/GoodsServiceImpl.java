@@ -4,6 +4,7 @@ import cn.cugcs.sakura.seckill.entity.Goods;
 import cn.cugcs.sakura.seckill.mapper.GoodsMapper;
 import cn.cugcs.sakura.seckill.service.IGoodsService;
 import cn.cugcs.sakura.seckill.vo.GoodsVO;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -38,5 +39,14 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsMapper, Goods> implements
     @Override
     public GoodsVO getSeckillGoodsByGoodsId(Long goodsId) {
         return goodsMapper.selectGoodsVOById(goodsId);
+    }
+
+    @Override
+    public Integer updateStockCountByGoodsId(Goods goods, Long id) {
+        UpdateWrapper<Goods> updateWrapper = new UpdateWrapper<>();
+        updateWrapper.setSql("goods_stock = goods_stock - 1");
+        updateWrapper.gt("goods_stock", 0);
+        updateWrapper.eq("id", id);
+        return goodsMapper.update(goods, updateWrapper);
     }
 }
